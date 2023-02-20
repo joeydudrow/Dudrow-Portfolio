@@ -1,0 +1,120 @@
+---
+title: "Bellabeat Activity Data"
+author: "Joey Dudrow"
+date: "2023-01-27"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+## Introduction
+
+In this project, I was tasked with compiling, analyzing, and finding patterns within data collected by bellabeat. They are a health and fitness company that have an activity tracker designed specifically for women. I downloaded the data sets from <https://www.kaggle.com/arashnic/fitbit>
+
+I first made sure that my R program was loaded with the TidyVerse library using the library function.
+
+```{r loading tidyverse, include=FALSE, echo=FALSE}
+library(tidyverse)
+```
+
+I then loaded several of the data sets into the R program for analysis using the read_csv function. I named my data sets daily_activity, heartrate_seconds, sleep_day, and weight_log. 
+
+```{r importing data sets, include=FALSE}
+daily_activity <- read_csv('dailyActivity_merged.csv')
+heartrate_seconds <- read_csv('heartrate_seconds_merged.csv')
+sleep_day <- read.csv('sleepDay_merged.csv')
+weight_log <- read_csv('weightLogInfo_merged.csv')
+```
+
+
+## Preliminary Analysis
+
+Next I tried to get a general understanding of the data I was working with. Fist I viewed each table individually to get an idea of the variables I will be working with and try to find common factors that will help with later analysis. 
+
+```{r viewing data sets, include=FALSE}
+view(daily_activity)
+view(heartrate_seconds)
+view(sleep_day)
+view(weight_log)
+```
+
+Next I determined if each of the tables were using the same number of participants.
+
+```{r number of distinct variables}
+n_distinct(daily_activity$Id)
+n_distinct(sleep_day$Id)
+n_distinct(heartrate_seconds$Id)
+n_distinct(weight_log$Id)
+```
+
+I discovered that the daily activity data and the sleep data had many participants, while only 8 different participants submitted weight data. This would be important when making decisions on the data types to analyze.
+
+## Data Summary
+
+Next I wanted to get a general summary of each of the four data sets. In order you will see the daily activity set, the sleep set, the weight log set, and finally the heart rate set.
+
+```{r summarizing data}
+daily_activity %>% 
+  select(TotalSteps,TotalDistance,SedentaryMinutes) %>% 
+  summary()
+
+sleep_day %>% 
+  select(TotalSleepRecords,TotalMinutesAsleep,TotalTimeInBed) %>% 
+  summary()
+
+weight_log %>% 
+  select(WeightPounds, BMI) %>% 
+  summary()
+
+heartrate_seconds %>% 
+  select(Value) %>% 
+  summary()
+```
+
+This gave me the first trends in the data that can be useful.
+
+## Combining Data Sets
+
+Next I decided to combine the data sets based on the Id numbers to make the graphing and analysis easier. I merged the daily activity and sleep log by their ID first, then I merged that set with the weight log set, naming it combined_data_2.
+
+```{r combining data, include=FALSE}
+combined_data <- merge(daily_activity,sleep_day, by="Id")
+combined_data_2 <- merge.default(combined_data,weight_log, by="Id")
+```
+
+Unfortunately, the heart rate data set was too large to merge into the other data sets. So my analysis will have to compare the daily activity (calories, steps, intensity, etc), sleep data, and weight data.
+
+## Graphing and Analysis
+
+Next I started plotting different variables into the graphing functions to look for any relationships or trends in the data. I first wanted to see if there were any trends between the amount of activity (total steps) and resting (sedentary minutes)
+
+```{r 1st graph, message=FALSE}
+ggplot(data = combined_data_2)+
+  geom_smooth(mapping = ,aes(x=SedentaryMinutes, y=TotalSteps))+
+  labs(title = "Relationship Between Sedentary and Active Time", caption = 'Data collected by Mobius on Kaggle')
+```
+
+As expected, those that were only sedentary about 500 minutes total, had that greatest amount of activity. However, you can see there was a second spike in activity that had around 1100 minutes of total rest, which I was not expecting. I continued along this line of thought to see if this was consistent with other variables. 
+
+```{r other graphs, message=FALSE}
+ggplot(data = combined_data_2)+
+  geom_smooth(mapping = aes(x=TotalTimeInBed,y=Calories))+
+  labs(title = "Relationship Between Time in Bed and Calories Burned", caption = 'Data collected by Mobius on Kaggle')
+
+ggplot(data = combined_data_2)+
+  geom_smooth(mapping = ,aes(x=SedentaryMinutes, y=Calories))+
+  labs(title = "Relationship Between Sedentary Time and Calories Burned", caption = 'Data collected by Mobius on Kaggle')
+```
+
+Again I found that there is a spike in calories burned for those that spent a longer amount of time resting (~600 mins/1100 mins). 
+
+## Conclusion
+
+Based on these graphs we can conclude:
+
+* There is a correlation between rest and total activity
+* There is a spike in calories burned/activity for those that rest ~1100 minutes/month
+* People who can balance rest and activity may see better results
+
+Many people give up on their health journey believing that constant activity and exercise is necessary. I believe that if the marketing team can push the importance of rest and sleep in the customers health journey, more people would stick with and accomplish their goals. 
